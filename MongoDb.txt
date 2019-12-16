@@ -1,5 +1,23 @@
 {"address": {"building": "1007", "coord": [-73.856077, 40.848447], "street": "Morris Park Ave", "zipcode": "10462"}, "borough": "Bronx", "cuisine": "Bakery", "grades": [{"date": {"$date": 1393804800000}, "grade": "A", "score": 2}, {"date": {"$date": 1378857600000}, "grade": "A", "score": 6}, {"date": {"$date": 1358985600000}, "grade": "A", "score": 10}, {"date": {"$date": 1322006400000}, "grade": "A", "score": 9}, {"date": {"$date": 1299715200000}, "grade": "B", "score": 14}], "name": "Morris Park Bake Shop", "restaurant_id": "30075445"}
 
+Mongo Db can contain different type of collection , collection contain different document or objects  and documents contain array of key value pair
+
+table-->> collection
+rows ->>> json document
+join ->> embedding and linking
+
+These are some reasons, of why MongoDB is popular.
+
+Aggregation Framework
+BSON Format
+Sharding
+Ad-hoc Query
+Capped Collection
+Indexing
+File Storage
+Replication
+MongoDB Management Service (MMS)
+
 show dbs; // list existing db 
 use dbname; // to create a db
 mongo -u <username> -p <password> --authenticationDatabase <dbname> //login into the db
@@ -49,6 +67,19 @@ db.<collectionName>.dataSize() // Size of the collection
 db.<collectionName>.storageSize() // Total size of document stored in the collection
 db.<collectionName>.totalSize() // Total size in bytes for both collection data and indexes
 db.<collectionName>.totalIndexSize() // Total size of all indexes in the collection
+
+db.examples.find( {
+status: "A",
+$or: [ { qty: { $lt: 30 } }, { item: /^p/ } ]
+} )
+
+similar to 
+SELECT * FROM example WHERE status = "A" AND ( qty < 30 OR item LIKE "p%")
+
+db.examples.find( { status: "A", qty: { $lt: 30 } } )
+similar to 
+SELECT * FROM example WHERE status = "A" AND qty < 30
+
 
 Write a MongoDB query to display all the documents in the collection restaurants.
 db.restaurants.find()
@@ -114,9 +145,7 @@ Write a MongoDB query to find the restaurant Id, name, borough and cuisine for t
 db.restaurants.find({"name": /^Wil/},
 						{"restaurant_id":1,
 						"borough":1,
-						"cuisine":1}
-                           
-                     );
+						"cuisine":1});
 					 
 					 
 Write a MongoDB query to find the restaurant Id, name, borough and cuisine for those restaurants which contain 'ces' as last three letters for its name.
@@ -159,19 +188,18 @@ db.restaurants.find(
 );
 
 Write a MongoDB query to find the restaurant Id, name, borough and cuisine for those restaurants which achieved a score which is not more than 10.
+
 db.restaurants.find(
+{"grades.score" : 
+{ $not: 
+{$gt : 10}
+}
+},
 {
 "restaurant_id" : 1,
-"name":1,
-"borough":1,
+"name":1,"borough":1,
 "cuisine" :1
-},
-$and :[
-{"grades.score" :{$lt: [
-{ "cuisine" : "American " },
-{ "cuisine" : "Chinese" }
-]}}
-]
+}
 );
 
 Write a MongoDB query to find the restaurant Id, name, borough and cuisine for those restaurants which prepared dish except 'American' and 'Chinees' or restaurant's name begins with letter 'Wil'.
@@ -188,3 +216,76 @@ $and :[
 {"name": /^Wil/}
 ]
 );
+
+
+Write a MongoDB query to find the restaurant Id, name, and grades for those restaurants which achieved a grade of "A" and scored 11 on an ISODate "2014-08-11T00:00:00Z" among many of survey dates
+
+db.restaurants.find( 
+                {
+                 "grades.date": ISODate("2014-08-11T00:00:00Z"), 
+                 "grades.grade":"A" , 
+                 "grades.score" : 11
+                }, 
+                {"restaurant_id" : 1,"name":1,"grades":1}
+             );
+			 
+Write a MongoDB query to find the restaurant Id, name and grades for those restaurants where the 2nd element of grades array contains a grade of "A" and score 9 on an ISODate "2014-08-11T00:00:00Z"
+
+db.restaurants.find( 
+                {
+                 "grades.1.date": ISODate("2014-08-11T00:00:00Z"), 
+                 "grades.1.grade":"A" , 
+                 "grades.1.score" : 9
+                }, 
+                {"restaurant_id" : 1,"name":1,"grades":1}
+             );
+
+Write a MongoDB query to find the restaurant Id, name, address and geographical location for those restaurants where 2nd element of coord array contains a value which is more than 42 and upto 52..
+
+db.restaurants.find( 
+                {
+                 "address.1.coord":{$gt:42,$lt:53} 
+                }, 
+                {"restaurant_id" : 1,"name":1,"address":1,"coord":1}
+             );
+
+Write a MongoDB query to arrange the name of the restaurants in ascending order along with all the columns.
+			 
+db.restaurants.find().sort({"name":1});
+
+Write a MongoDB query to arranged the name of the cuisine in ascending order and for that same cuisine borough should be in descending order.
+db.restaurants.find().sort({"cuisine":1,"borough":-1});
+
+Write a MongoDB query to know whether all the addresses contains the street or not.
+db.restaurants.find({"address.street":{$exists:true}});
+
+Write a MongoDB query which will select all documents in the restaurants collection where the coord field value is Double.
+db.restaurants.find({"address.coord":{$type:1}});
+
+Write a MongoDB query which will select the restaurant Id, name and grades for those restaurants which returns 0 as a remainder after dividing the score by 7. 
+db.restaurants.find( 
+                {
+                 "grades.score":{$mod:[7,0]} 
+                }, 
+                {"restaurant_id" : 1,"name":1,"grades":1}
+             );
+
+Write a MongoDB query to find the restaurant name, borough, longitude and attitude and cuisine for those restaurants which contains 'mon' as three letters somewhere in its name.
+
+db.restaurants.find( 
+                {
+                 "name":{ $regex : "mon.*", $options: "i" }
+                }, 
+                {"name":1,"borough":1,"address.coord":1,"cuisine":1}
+             );
+			 
+Write a MongoDB query to find the restaurant name, borough, longitude and latitude and cuisine for those restaurants which contain 'Mad' as first three letters of its name.
+
+db.restaurants.find( 
+                {
+                 "name":{ $regex : "/^Mad/i",}
+                }, 
+                {"name":1,"borough":1,"address.coord":1,"cuisine":1}
+             );
+			 
+			 
